@@ -32,6 +32,7 @@ public abstract class Collideable extends WorldObject{
             setX(getX() + vx);
         }
         if (getY() < toPush.getY()) {
+            System.out.println("vy is: " + vy);
             setY(getY() - vy);
         } else {
             setY(getY() + vy);

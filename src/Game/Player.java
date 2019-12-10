@@ -13,7 +13,7 @@ public class Player extends MapBlock implements Destroyable{
     private int angle;
     private boolean toBeDestroyed = false;
     private int health;
-    private int lives;
+    private boolean exited;
 
     private int defaultX;
     private int defaultY;
@@ -26,10 +26,7 @@ public class Player extends MapBlock implements Destroyable{
     private boolean RightPressed;
     private boolean LeftPressed;
 
-    private boolean arrayListFreedom = true;
     private static final int DEFAULT_TIMER_VALUE = 30;
-    private int bulletTimer = DEFAULT_TIMER_VALUE;
-    private boolean lost;
 
 
     Player(int x, int y, int vx, int vy, int angle, BufferedImage playerImg) {
@@ -40,8 +37,7 @@ public class Player extends MapBlock implements Destroyable{
         this.vx = vx;
         this.vy = vy;
         this.health = 1;
-        this.lives = 1;
-        this.lost = false;
+        this.exited = false;
     }
 
 
@@ -99,13 +95,9 @@ public class Player extends MapBlock implements Destroyable{
 
     public void update() {
         if (health <= 0) {
-            lives--;
             health = 5;
             super.setX(defaultX);
             super.setY(defaultY);
-        }
-        if (lives <= 0) {
-            lost = true;
         }
 
         if (this.UpPressed) {
@@ -182,11 +174,18 @@ public class Player extends MapBlock implements Destroyable{
     public int getHealth() {
         return health;
     }
-    public int getLives() {
-        return lives;
-    }
 
     public boolean getToBeDestroyed() {
         return toBeDestroyed;
+    }
+    public void setToBeDestroyed() {
+        toBeDestroyed = true;
+    }
+
+    public boolean getExited() {
+        return exited;
+    }
+    public void setExited() {
+        exited = true;
     }
 }

@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Iterator;
-import java.util.Map;
 
 import static javax.imageio.ImageIO.read;
 
@@ -40,6 +39,7 @@ public class Main extends JPanel  {
 
     private ArrayList<MapBlock> blocks = new ArrayList<>();
     private ArrayList<Player> players = new ArrayList<>();
+    private ArrayList<Player> exitedPlayers = new ArrayList<>();
     private PlayerController pc;
 
 
@@ -50,6 +50,7 @@ public class Main extends JPanel  {
         try {
 
             while (!(gameInstance.gameEnd)) {
+                gameInstance.checkGameEnd();
                 gameInstance.testCollisions();
                 gameInstance.updatePlayers();
                 gameInstance.updateBlocks();
@@ -63,12 +64,36 @@ public class Main extends JPanel  {
 
     }
 
+    /**
+     *
+     * @return 0 means game is won.
+     *         1 means game is lost.
+     *         2 means level is won.
+     */
+    private int checkGameEnd() {
+        if (!(players.size() + exitedPlayers.size() >= 3)) {
+            System.out.println("Game Lost");
+            return 1;
+        }
+        if (gameEnd) {
+            gameEnd = true;
+            return 0;
+        }
+        if (exitedPlayers.size() == 3) {
+            System.out.println("Level Won");
+            return 2;
+        }
+        return 0;
+    }
+
 
     private void init() {
         this.jf = new JFrame("Koalabr8");
         this.jf.setFocusable(true);
         this.jf.requestFocus();
-        BufferedImage backgroundimg = null, k1img = null, k2img = null, k3img = null, wallimg = null, bladeimg = null, boulderimg = null, tntimg = null, locklockedimg = null, lockunlockedimg = null, switchimg = null;
+        BufferedImage backgroundimg = null, k1img = null, k2img = null, k3img = null, wallimg = null, bladeimg = null,
+                boulderimg = null, tntimg = null, locklockedimg = null, lockunlockedimg = null, switchimg = null
+                , exitredimg = null, exitblueimg = null, exitclosedimg = null;
         try {
             BufferedImage tmp;
             System.out.println(System.getProperty("user.dir"));
@@ -86,7 +111,9 @@ public class Main extends JPanel  {
             locklockedimg = read(new File("resources/lockLocked.png"));
             lockunlockedimg = read(new File("resources/lockUnlocked.png"));
             switchimg = read(new File("resources/switch.png"));
-
+            exitredimg = read(new File("resources/exitRed.png"));
+            exitblueimg = read(new File("resources/exitBlue.png"));
+            exitclosedimg = read(new File("resources/exitClosed.png"));
             backgroundimg = read(new File("resources/backgroundTile.png"));
             // Read the map text file and create a buffered reader to easily read the text.
             File mapData = new File("resources/map.txt");
@@ -97,7 +124,8 @@ public class Main extends JPanel  {
         }
         background = new Background(backgroundimg);
         try {
-            generateBlocks(k1img, k2img, k3img, wallimg, bladeimg, boulderimg, tntimg, locklockedimg, lockunlockedimg, switchimg);
+            generateBlocks(k1img, k2img, k3img, wallimg, bladeimg, boulderimg, tntimg, locklockedimg, lockunlockedimg,
+                    switchimg, exitredimg, exitblueimg, exitclosedimg);
             System.out.println("Blocks loaded");
         } catch(IOException ex){
             System.out.println("Blocks not loaded: " + ex);
@@ -128,7 +156,10 @@ public class Main extends JPanel  {
     }
 
     // Generates all block objects and stores in a list. This will later be accessed when drawing and updating.
-    private void generateBlocks(BufferedImage k1img, BufferedImage k2img, BufferedImage k3img, BufferedImage wallimg, BufferedImage bladeimg, BufferedImage boulderimg, BufferedImage tntimg, BufferedImage locklockedimg, BufferedImage lockunlockedimg, BufferedImage switchimg) throws IOException {
+    private void generateBlocks(BufferedImage k1img, BufferedImage k2img, BufferedImage k3img, BufferedImage wallimg,
+                                BufferedImage bladeimg, BufferedImage boulderimg, BufferedImage tntimg, BufferedImage locklockedimg,
+                                BufferedImage lockunlockedimg, BufferedImage switchimg, BufferedImage exitredimg,
+                                BufferedImage exitblueimg, BufferedImage exitclosedimg) throws IOException {
         ArrayList<Lock> locks = new ArrayList<>();
         ArrayList<Switch> switches = new ArrayList<>();
         String line;
@@ -164,6 +195,10 @@ public class Main extends JPanel  {
                             blocks.add(new Boulder(blockXPostion, blockYPosition, boulderimg));
                         } else if(lineChar == 'T') {
                             blocks.add(new TNT(blockXPostion, blockYPosition, tntimg));
+                        } else if (lineChar == '#') {
+                            blocks.add(new Exit(blockXPostion, blockYPosition, exitredimg, exitblueimg, exitclosedimg, 3));
+                        } else if (lineChar == '$') {
+                            blocks.add(new Exit(blockXPostion, blockYPosition, exitredimg, exitblueimg, exitclosedimg, 1));
                         } else if (lineChar >= 97 && lineChar <= 122) {
                             // Odd ASCII values correspond to locks. Consecutive character represents the corresponding switch.
                             if (lineChar % 2 == 1) {
@@ -264,10 +299,10 @@ public class Main extends JPanel  {
                 }
             }
         }
-        Iterator iterPA = blocks.iterator();
+        Iterator iterPA = players.iterator();
         while (iterPA.hasNext()) {
             Collideable pa = (Collideable)iterPA.next();
-            Iterator iterPB = blocks.iterator();
+            Iterator iterPB = players.iterator();
             while (iterPB.hasNext()) {
                 Collideable pb = (Collideable)iterPB.next();
                 if(hasCollided(pa, pb)) {
@@ -357,6 +392,12 @@ public class Main extends JPanel  {
         while(iterator.hasNext()){
             Player player = iterator.next();
             player.update();
+            if (player.getExited()) {
+                exitedPlayers.add(player);
+                // A player is a special type of destroyable in which other members can set it as to be destroyed.
+                // It cannot be set to be not destroyed.
+                player.setToBeDestroyed();
+            }
             if (player instanceof Destroyable && ((Destroyable) player).getToBeDestroyed()){
                 System.out.println("Player will be removed");
                 if (!(this.pc.getPlayerCount() <= 0)) {
