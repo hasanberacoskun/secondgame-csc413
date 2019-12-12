@@ -457,35 +457,19 @@ public class Main extends JPanel  {
      * sized objects and are calculated based on the size of their corresponding images.
      */
     private boolean hasCollided(Collideable a, Collideable b) {
+        int padding = 1;
         if (a != b && !((a instanceof Wall) && (b instanceof Wall))) {
-            /*if (a.getX() + a.getImg().getWidth() > b.getX()){
-                //System.out.println("has not collided");
-                return true;
-            } else if (b.getX() + b.getImg().getWidth() > a.getX()) {
-                //System.out.println("has not collided");
-                return true;
-            } else if (a.getY() + a.getImg().getHeight() > b.getY()) {
-                //System.out.println("has not collided");
-                return true;
-            } else if (b.getY() + b.getImg().getHeight() > a.getY()) {
-                //System.out.println("has not collided");
-                return true;
-            }*/
-//            System.out.println("a height: " + a.getImg().getHeight());
-//            System.out.println("a y value: " + a.getY());
-            if ((a.getX() + a.getImg().getWidth() >= b.getX()) && (a.getX() + a.getImg().getWidth() <= b.getX() + b.getImg().getWidth())) {
-                if ((a.getY() + a.getImg().getHeight() >= b.getY()) && (a.getY() + a.getImg().getHeight() <= b.getY() + b.getImg().getHeight())) {
+            if ((a.getX() - padding + a.getImg().getWidth() >= b.getX()) && (a.getX() - padding + a.getImg().getWidth() <= b.getX() + b.getImg().getWidth())) {
+                if ((a.getY() - padding + a.getImg().getHeight() >= b.getY()) && (a.getY() - padding + a.getImg().getHeight() <= b.getY() + b.getImg().getHeight())) {
                     return true;
-                } else if ((b.getY() + b.getImg().getHeight() >= a.getY()) && (b.getY() + b.getImg().getHeight() <= a.getY() + a.getImg().getHeight())) {
+                } else if ((b.getY() - padding + b.getImg().getHeight() >= a.getY()) && (b.getY() - padding + b.getImg().getHeight() <= a.getY() + a.getImg().getHeight())) {
                     return true;
                 }
-            } else if ((b.getX() + b.getImg().getWidth() >= a.getX()) && (b.getX() + b.getImg().getWidth() <= a.getX() + a.getImg().getWidth())) {
-                if ((a.getY() + a.getImg().getHeight() >= b.getY()) && (a.getY() + a.getImg().getHeight() <= b.getY() + b.getImg().getHeight())) {
+            } else if ((b.getX() - padding + b.getImg().getWidth() >= a.getX()) && (b.getX() - padding + b.getImg().getWidth() <= a.getX() + a.getImg().getWidth())) {
+                if ((a.getY() - padding + a.getImg().getHeight() >= b.getY()) && (a.getY() - padding + a.getImg().getHeight() <= b.getY() + b.getImg().getHeight())) {
                     return true;
-                } else if ((b.getY() + b.getImg().getHeight() >= a.getY()) && (b.getY() + b.getImg().getHeight() <= a.getY() + a.getImg().getHeight()))
+                } else if ((b.getY() - padding + b.getImg().getHeight() >= a.getY()) && (b.getY() - padding + b.getImg().getHeight() <= a.getY() + a.getImg().getHeight()))
                     return true;
-            } else {
-                return false;
             }
         }
         return false;
