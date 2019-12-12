@@ -41,21 +41,35 @@ public class Main extends JPanel  {
     private ArrayList<Player> players = new ArrayList<>();
     private ArrayList<Player> exitedPlayers = new ArrayList<>();
     private PlayerController pc;
+    private int levelCount = 0;
 
 
     public static void main(String[] args) {
         Thread x;
         Main gameInstance = new Main();
-        gameInstance.init();
+        if (!gameInstance.gameEnd){
+            gameInstance.init();
+        }
         try {
 
             while (!(gameInstance.gameEnd)) {
+                if (gameInstance.checkGameEnd() == 2) {
+                    gameInstance.levelCount++;
+                    gameInstance.reset();
+                    gameInstance.init();
+                }
                 gameInstance.checkGameEnd();
                 gameInstance.testCollisions();
                 gameInstance.updatePlayers();
                 gameInstance.updateBlocks();
                 gameInstance.repaint();
                 Thread.sleep(1000 / 144);
+            }
+            System.out.println("Game end.");
+            if (gameInstance.checkGameEnd() == 1) {
+                System.out.println("Game was lost.");
+            } else {
+                System.out.println("Game was won.");
             }
         } catch (InterruptedException ignored) {
 
@@ -72,7 +86,7 @@ public class Main extends JPanel  {
      */
     private int checkGameEnd() {
         if (!(players.size() + exitedPlayers.size() >= 3)) {
-            System.out.println("Game Lost");
+            gameEnd = true;
             return 1;
         }
         if (gameEnd) {
@@ -86,8 +100,17 @@ public class Main extends JPanel  {
         return 0;
     }
 
+    private void reset() {
+        blocks.clear();
+        players.clear();
+        exitedPlayers.clear();
+        SCREEN_WIDTH = 0;
+        SCREEN_HEIGHT = 0;
+    }
+
 
     private void init() {
+        System.out.println("Initializing Level");
         this.jf = new JFrame("Koalabr8");
         this.jf.setFocusable(true);
         this.jf.requestFocus();
@@ -116,42 +139,45 @@ public class Main extends JPanel  {
             exitclosedimg = read(new File("resources/exitClosed.png"));
             backgroundimg = read(new File("resources/backgroundTile.png"));
             // Read the map text file and create a buffered reader to easily read the text.
-            File mapData = new File("resources/map.txt");
+            File mapData = new File("resources/map" + levelCount + ".txt");
+            if (mapData == null) {
+                gameEnd = true;
+                return;
+            }
             br = new BufferedReader(new FileReader(mapData));
+            background = new Background(backgroundimg);
+            try {
+                generateBlocks(k1img, k2img, k3img, wallimg, bladeimg, boulderimg, tntimg, locklockedimg, lockunlockedimg,
+                        switchimg, exitredimg, exitblueimg, exitclosedimg);
+                System.out.println("Blocks loaded");
+            } catch (IOException ex) {
+                System.out.println("Blocks not loaded: " + ex);
+            }
+            System.out.println("Screen height will be: " + SCREEN_HEIGHT);
+            System.out.println("Screen width will be: " + SCREEN_WIDTH);
+            this.world = new BufferedImage(Main.SCREEN_WIDTH, Main.SCREEN_HEIGHT, BufferedImage.TYPE_INT_RGB);
+            pc = new PlayerController(players, KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT);
 
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-        }
-        background = new Background(backgroundimg);
-        try {
-            generateBlocks(k1img, k2img, k3img, wallimg, bladeimg, boulderimg, tntimg, locklockedimg, lockunlockedimg,
-                    switchimg, exitredimg, exitblueimg, exitclosedimg);
-            System.out.println("Blocks loaded");
-        } catch(IOException ex){
-            System.out.println("Blocks not loaded: " + ex);
-        }
-        System.out.println("Screen height will be: " + SCREEN_HEIGHT);
-        System.out.println("Screen width will be: " + SCREEN_WIDTH);
-        this.world = new BufferedImage(Main.SCREEN_WIDTH, Main.SCREEN_HEIGHT, BufferedImage.TYPE_INT_RGB);
-        pc = new PlayerController(players, KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT);
+            this.jf.setLayout(new BorderLayout());
+            this.jf.add(this);
 
-        this.jf.setLayout(new BorderLayout());
-        this.jf.add(this);
-
-        this.jf.addKeyListener(pc);
-        // Loop lists the key listeners with their addresses.
+            this.jf.addKeyListener(pc);
+            // Loop lists the key listeners with their addresses.
         /*String listedKeyListeners = "";
         for (int i = 0; i < this.jf.getKeyListeners().length; i++) {
             listedKeyListeners += this.jf.getKeyListeners()[i].toString() + ", ";
         }
         System.out.println("key listeners= " + listedKeyListeners);*/
 
-        this.jf.setSize(Main.SCREEN_WIDTH, Main.SCREEN_HEIGHT + 30);
-        this.jf.setResizable(false);
-        jf.setLocationRelativeTo(null);
+            this.jf.setSize(Main.SCREEN_WIDTH, Main.SCREEN_HEIGHT + 30);
+            this.jf.setResizable(false);
+            jf.setLocationRelativeTo(null);
 
-        this.jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.jf.setVisible(true);
+            this.jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            this.jf.setVisible(true);
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+        }
 
     }
 
@@ -187,9 +213,9 @@ public class Main extends JPanel  {
                         int blockYPosition = (heightCount - 1) * 50;
                         if (lineChar == 'W') {
                             blocks.add(new Wall(blockXPostion, blockYPosition, wallimg));
-                        } else if(lineChar == 'V'){
+                        } else if(lineChar == 'H'){
                             blocks.add(new Blade(blockXPostion, blockYPosition, bladeimg, false));
-                        } else if(lineChar == 'H') {
+                        } else if(lineChar == 'V') {
                             blocks.add(new Blade(blockXPostion, blockYPosition, bladeimg, true));
                         } else if(lineChar == 'B') {
                             blocks.add(new Boulder(blockXPostion, blockYPosition, boulderimg));
@@ -242,11 +268,11 @@ public class Main extends JPanel  {
                                 }
                             }
                         } else if(lineChar == '1') {
-                            players.add(new Player(blockXPostion, blockYPosition, 0, 0, 0, k1img));
+                            players.add(new Player(blockXPostion, blockYPosition, 0, 0, 270, k1img));
                         } else if(lineChar == '2') {
-                            players.add(new Player(blockXPostion, blockYPosition, 0, 0, 0, k2img));
+                            players.add(new Player(blockXPostion, blockYPosition, 0, 0, 270, k2img));
                         } else if(lineChar == '3') {
-                            players.add(new Player(blockXPostion, blockYPosition, 0, 0, 0, k3img));
+                            players.add(new Player(blockXPostion, blockYPosition, 0, 0, 270, k3img));
                         }
                     }
                 }
