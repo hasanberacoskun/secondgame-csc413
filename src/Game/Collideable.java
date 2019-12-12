@@ -2,6 +2,12 @@ package Game;
 
 import java.awt.image.BufferedImage;
 
+/**
+ * @author bera h. coskun
+ *
+ * A Collideable object must be able to handle collisions. Collision checking does not occur within a Collideable object.
+ * Collision checking must be handled elseware.
+ */
 public abstract class Collideable extends WorldObject{
 
     public Collideable(int x, int y, BufferedImage img) {
@@ -17,6 +23,9 @@ public abstract class Collideable extends WorldObject{
      */
     abstract boolean handleCollisions(Collideable toCompare);
 
+    /*
+    This is a useful method for pushing back objects based on the object with which it has collided with.
+     */
     public void pushBack(Collideable toPush) {
         double calculatedAngle;
         try {

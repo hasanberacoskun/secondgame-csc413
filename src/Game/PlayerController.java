@@ -4,8 +4,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 
+/**
+ * @author bera h. coskun
+ *
+ * At least one player controller must be created to accompany one or more players. This handles the controls. The Player
+ * interprets these controls.
+ */
 public class PlayerController implements KeyListener {
-    private Player p;
+    /*
+    Multiple players can be stored in the PlayerController.
+     */
     private ArrayList<Player> players;
     private int up;
     private int down;
@@ -13,6 +21,9 @@ public class PlayerController implements KeyListener {
     private int left;
     private int playerCount;
 
+    /**
+     * Constructor for only one player is added to the PlayerController (this game does not use this).
+     */
     public PlayerController(Player p, int up, int down, int left, int right) {
         this.players.add(p);
         this.up = up;
@@ -20,6 +31,9 @@ public class PlayerController implements KeyListener {
         this.right = right;
         this.left = left;
     }
+    /**
+     * Constructor for when multiple players are added to the PlayerController.
+     */
     public PlayerController(ArrayList<Player> players, int up, int down, int left, int right) {
         this.players = players;
         this.up = up;
@@ -32,7 +46,6 @@ public class PlayerController implements KeyListener {
     public void decreasePlayerCount() {
         playerCount--;
     }
-
     public int getPlayerCount() {
         return playerCount;
     }

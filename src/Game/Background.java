@@ -4,6 +4,12 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
+/**
+ * @author bera h. coskun
+ *
+ * Background draws itself based on the world's width and height. Backgrounds are treated as tiling tiles. Background
+ * tiles can be any size.
+ */
 public class Background extends WorldObject{
     private BufferedImage img;
 

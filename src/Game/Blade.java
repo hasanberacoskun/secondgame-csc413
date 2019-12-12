@@ -2,7 +2,13 @@ package Game;
 
 import java.awt.image.BufferedImage;
 
-public class Blade extends MapBlock {
+/**
+ * @author bera h. coskun
+ *
+ * Based on whether a blade is horizontal or vertical, it will move back and forth unless it collides with another object.
+ * A blade can be destroyed by a Boulder.
+ */
+public class Blade extends MapBlock implements Destroyable{
 
     // false means horizontal motion ('V')
     // true means vertical motion ('H')
@@ -10,6 +16,7 @@ public class Blade extends MapBlock {
     // false means negative direction
     // true means positive direction
     private boolean direction;
+    private boolean toBeDestroyed = false;
     private int R = 2;
     private int vx;
     private int vy;
@@ -65,6 +72,9 @@ public class Blade extends MapBlock {
         System.out.println(direction);
     }
 
+    /**
+     * The direction of movement depends on the direction variable, set during collision handling.
+     */
     void update() {
         checkBorder();
         if (direction) {
@@ -74,6 +84,12 @@ public class Blade extends MapBlock {
         }
     }
 
+    /**
+     *
+     * @param toCompare is the object that has been collided with. The information about this object can be useful for
+     *                  handling collisions.
+     * A collision will incite a direction change. If collision is with a Boulder, the blade is set to be destroyed.
+     */
     public boolean handleCollisions(Collideable toCompare) {
         changeDirection();
         if(direction) {
@@ -83,7 +99,13 @@ public class Blade extends MapBlock {
             moveBackwards();
             moveBackwards();
         }
+        if(toCompare instanceof Boulder){
+            toBeDestroyed = true;
+        }
         return true;
     }
 
+    public boolean getToBeDestroyed() {
+        return toBeDestroyed;
+    }
 }

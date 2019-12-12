@@ -3,20 +3,24 @@ package Game;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Iterator;
 
+/**
+ * @author bera h. coskun
+ *
+ * A Player is controlled by a playerController. More details on collisions are provided in further comments. Player
+ * placement is handled by the map[0..].txt files.
+ */
 public class Player extends MapBlock implements Destroyable{
 
     private int vx;
     private int vy;
     private int angle;
-    private boolean toBeDestroyed = false;
-    private int health;
-    private boolean exited;
-
     private int defaultX;
     private int defaultY;
+
+    private boolean toBeDestroyed = false;
+    private boolean exited;
+    private int health;
 
     private final int R = 2;
     private final int ROTATIONSPEED = 3;
@@ -66,6 +70,21 @@ public class Player extends MapBlock implements Destroyable{
         this.LeftPressed = false;
     }
 
+    /**
+     *
+     * @param toCompare is the object that has been collided with. The information about this object can be useful for
+     *                  handling collisions.
+     * @return true when completed.
+     *
+     * If collision with the following:
+     * -Wall or Boulder -> Push back
+     * -Player -> Push back
+     * -TNT -> Set toBeDestroyed
+     * -Lock -> Push back if locked.
+     * -Switch -> (the switch handles this)
+     *
+     * Other collisions are handled by those objects. Only collisions that directly effect player are handled by player.
+     */
     @Override
     public boolean handleCollisions(Collideable toCompare){
         // modify this later to be Wall instead of MapBlock
@@ -93,6 +112,9 @@ public class Player extends MapBlock implements Destroyable{
         // Add more.
     }
 
+    /**
+     * The player's position is updated.
+     */
     public void update() {
         if (health <= 0) {
             health = 5;
@@ -153,12 +175,10 @@ public class Player extends MapBlock implements Destroyable{
         }
     }
 
+    /**
+     * Image is drawn uniquely for Players since there is rotation.
+     */
     @Override
-    public String toString() {
-        return "x=" + getX() + ", y=" + getY() + ", angle=" + angle;
-    }
-
-
     void drawImage(Graphics g) {
         //System.out.println("graphics: "+ g);
         AffineTransform rotation = AffineTransform.getTranslateInstance(getX(), getY());
@@ -167,21 +187,19 @@ public class Player extends MapBlock implements Destroyable{
         g2d.drawImage(getImg(), rotation, null);
     }
 
-
+    // Setter and getter methods:
     public void setHealth(int health) {
         this.health = health;
     }
     public int getHealth() {
         return health;
     }
-
     public boolean getToBeDestroyed() {
         return toBeDestroyed;
     }
     public void setToBeDestroyed() {
         toBeDestroyed = true;
     }
-
     public boolean getExited() {
         return exited;
     }

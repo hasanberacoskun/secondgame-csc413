@@ -5,7 +5,6 @@
  */
 package Game;
 
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -20,56 +19,88 @@ import java.util.Iterator;
 import static javax.imageio.ImageIO.read;
 
 /**
- *
- * @author anthony-pc
  * @author bera h. coskun
+ *
+ * The main class handles much of the world generation (creation of objects) and also checks for collisions.
+ * It also handles game win and loss conditions. WorldObjects draw themselves.
+ *
  */
 public class Main extends JPanel  {
 
-
+    /*
+    Screen Height and width are used as world height and width in reality. However, in our case, screen width and height
+    is always the same as world width and height. Variable name should be adjusted accordingly if changes are made to this
+    fact.
+     */
     public static int SCREEN_WIDTH = 0;
     public static int SCREEN_HEIGHT = 0;
     private BufferedImage world;
     private BufferedReader br;
     private Graphics2D buffer;
     private JFrame jf;
-    //private Player player;
-    private Background background;
-    private boolean gameEnd = false;
 
+    /*
+    A Background object generates itself from tiles. It is not considered to be a Map Block.
+     */
+    private Background background;
+    /*
+    blocks stores all MapBlocks except for players.
+     */
     private ArrayList<MapBlock> blocks = new ArrayList<>();
+    /*
+    players are stored separately from other blocks.
+     */
     private ArrayList<Player> players = new ArrayList<>();
+    /*
+    Players who have exited are kept track of.
+     */
     private ArrayList<Player> exitedPlayers = new ArrayList<>();
+    /*
+    A single player controller is needed for this game in particular.
+     */
     private PlayerController pc;
+    /*
+    The level count is iterated as we move from level to level. Level count is used when finding the text file for the
+    next level. The level should be named as map[consecutive number starting at 0].txt
+     */
     private int levelCount = 0;
+    private boolean gameEnd = false;
 
 
     public static void main(String[] args) {
         Thread x;
         Main gameInstance = new Main();
+        /*
+        Initialization will only occur if the game has not ended.
+         */
         if (!gameInstance.gameEnd){
             gameInstance.init();
         }
         try {
-
-            while (!(gameInstance.gameEnd)) {
-                if (gameInstance.checkGameEnd() == 2) {
+            while (!(gameInstance.gameEnd) && !gameInstance.gameLost()) {
+                /*
+                If the level is won, we reset and reinitialize. Since levelCount has been iterated, a new level is loaded
+                during initialization.
+                 */
+                if (gameInstance.levelWon()) {
                     gameInstance.levelCount++;
                     gameInstance.reset();
                     gameInstance.init();
                 }
-                gameInstance.checkGameEnd();
+                /*
+                The following happens under normal conditions. Collisions are tested before any updates or repainting.
+                 */
                 gameInstance.testCollisions();
                 gameInstance.updatePlayers();
                 gameInstance.updateBlocks();
                 gameInstance.repaint();
                 Thread.sleep(1000 / 144);
             }
-            System.out.println("Game end.");
-            if (gameInstance.checkGameEnd() == 1) {
-                System.out.println("Game was lost.");
-            } else {
-                System.out.println("Game was won.");
+            /*
+            World will be drawn one last time before we end the game when the player has lost.
+             */
+            if (gameInstance.gameLost()) {
+                gameInstance.repaint();
             }
         } catch (InterruptedException ignored) {
 
@@ -80,26 +111,32 @@ public class Main extends JPanel  {
 
     /**
      *
-     * @return 0 means game is won.
-     *         1 means game is lost.
-     *         2 means level is won.
+     * @return true if the game has been lost.
      */
-    private int checkGameEnd() {
+    private boolean gameLost() {
         if (!(players.size() + exitedPlayers.size() >= 3)) {
-            gameEnd = true;
-            return 1;
+            return true;
+        } else {
+            return false;
         }
-        if (gameEnd) {
-            gameEnd = true;
-            return 0;
-        }
-        if (exitedPlayers.size() == 3) {
-            System.out.println("Level Won");
-            return 2;
-        }
-        return 0;
     }
 
+    /**
+     *
+     * @return true if the level has been won.
+     * reset() will ensure exitedPlayers is cleared.
+     */
+    private boolean levelWon() {
+        if (exitedPlayers.size() == 3) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Clears all relevant variables within main. Width and height are reset to 0 so that they may be recalculated.
+     */
     private void reset() {
         blocks.clear();
         players.clear();
@@ -108,10 +145,24 @@ public class Main extends JPanel  {
         SCREEN_HEIGHT = 0;
     }
 
-
+    /**
+     * Initializes the world.
+     * This method does the following:
+     * - Creates the JFrame.
+     * - Loads images and map file.
+     * - Creates background.
+     * - Loads MapBlocks (done via a separate method).
+     * - Creates a keyListener.
+     * - Creates a world.
+     */
     private void init() {
         System.out.println("Initializing Level");
-        this.jf = new JFrame("Koalabr8");
+        /*
+        A new JFrame is only created for the first level. This JFrame is modified for all other levels and end screen.
+         */
+        if (levelCount == 0) {
+            this.jf = new JFrame("Koalabr8");
+        }
         this.jf.setFocusable(true);
         this.jf.requestFocus();
         BufferedImage backgroundimg = null, k1img = null, k2img = null, k3img = null, wallimg = null, bladeimg = null,
@@ -121,7 +172,7 @@ public class Main extends JPanel  {
             BufferedImage tmp;
             System.out.println(System.getProperty("user.dir"));
             /*
-             * note class loaders read files from the out folder (build folder in netbeans) and not the
+             * Note how class loaders read files from the out folder (build folder in netbeans) and not the
              * current working directory.
              */
             k1img = read(new File("resources/koala1.png"));
@@ -139,53 +190,75 @@ public class Main extends JPanel  {
             exitclosedimg = read(new File("resources/exitClosed.png"));
             backgroundimg = read(new File("resources/backgroundTile.png"));
             // Read the map text file and create a buffered reader to easily read the text.
-            File mapData = new File("resources/map" + levelCount + ".txt");
-            if (mapData == null) {
-                gameEnd = true;
-                return;
-            }
-            br = new BufferedReader(new FileReader(mapData));
-            background = new Background(backgroundimg);
             try {
-                generateBlocks(k1img, k2img, k3img, wallimg, bladeimg, boulderimg, tntimg, locklockedimg, lockunlockedimg,
-                        switchimg, exitredimg, exitblueimg, exitclosedimg);
-                System.out.println("Blocks loaded");
+                File mapData = new File("resources/map" + levelCount + ".txt");
+                br = new BufferedReader(new FileReader(mapData));
+                background = new Background(backgroundimg);
+                try {
+                    generateBlocks(k1img, k2img, k3img, wallimg, bladeimg, boulderimg, tntimg, locklockedimg, lockunlockedimg,
+                            switchimg, exitredimg, exitblueimg, exitclosedimg);
+                    System.out.println("Blocks loaded");
+                } catch (IOException ex) {
+                    System.out.println("Blocks not loaded: " + ex);
+                }
+                System.out.println("Screen height will be: " + SCREEN_HEIGHT);
+                System.out.println("Screen width will be: " + SCREEN_WIDTH);
+                this.world = new BufferedImage(Main.SCREEN_WIDTH, Main.SCREEN_HEIGHT, BufferedImage.TYPE_INT_RGB);
+                pc = new PlayerController(players, KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT);
+                this.jf.setLayout(new BorderLayout());
+                this.jf.add(this);
+                this.jf.addKeyListener(pc);
+                this.jf.setSize(Main.SCREEN_WIDTH, Main.SCREEN_HEIGHT + 30);
+                this.jf.setResizable(false);
+                jf.setLocationRelativeTo(null);
+                this.jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                this.jf.setVisible(true);
             } catch (IOException ex) {
-                System.out.println("Blocks not loaded: " + ex);
+                /*
+                 * If we have entered here, the next map file has not been found, which means there are no more levels
+                 * to be played. The game has been won.
+                 */
+                this.world = new BufferedImage(450, 200, BufferedImage.TYPE_INT_RGB);
+                this.jf.setLayout(new BorderLayout());
+                this.jf.add(this);
+                this.jf.setSize(450, 200);
+                this.jf.setResizable(false);
+                jf.setLocationRelativeTo(null);
+                this.jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                this.jf.setVisible(true);
+                gameEnd = true;
             }
-            System.out.println("Screen height will be: " + SCREEN_HEIGHT);
-            System.out.println("Screen width will be: " + SCREEN_WIDTH);
-            this.world = new BufferedImage(Main.SCREEN_WIDTH, Main.SCREEN_HEIGHT, BufferedImage.TYPE_INT_RGB);
-            pc = new PlayerController(players, KeyEvent.VK_UP, KeyEvent.VK_DOWN, KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT);
-
-            this.jf.setLayout(new BorderLayout());
-            this.jf.add(this);
-
-            this.jf.addKeyListener(pc);
-            // Loop lists the key listeners with their addresses.
-        /*String listedKeyListeners = "";
-        for (int i = 0; i < this.jf.getKeyListeners().length; i++) {
-            listedKeyListeners += this.jf.getKeyListeners()[i].toString() + ", ";
-        }
-        System.out.println("key listeners= " + listedKeyListeners);*/
-
-            this.jf.setSize(Main.SCREEN_WIDTH, Main.SCREEN_HEIGHT + 30);
-            this.jf.setResizable(false);
-            jf.setLocationRelativeTo(null);
-
-            this.jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            this.jf.setVisible(true);
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
 
     }
 
-    // Generates all block objects and stores in a list. This will later be accessed when drawing and updating.
+    /**
+     * We take in the following images so that we may create appropriate tiles:
+     * @param k1img
+     * @param k2img
+     * @param k3img
+     * @param wallimg
+     * @param bladeimg
+     * @param boulderimg
+     * @param tntimg
+     * @param locklockedimg
+     * @param lockunlockedimg
+     * @param switchimg
+     * @param exitredimg
+     * @param exitblueimg
+     * @param exitclosedimg
+     * @throws IOException If something goes wrong, map will not be loaded.
+     */
     private void generateBlocks(BufferedImage k1img, BufferedImage k2img, BufferedImage k3img, BufferedImage wallimg,
                                 BufferedImage bladeimg, BufferedImage boulderimg, BufferedImage tntimg, BufferedImage locklockedimg,
                                 BufferedImage lockunlockedimg, BufferedImage switchimg, BufferedImage exitredimg,
                                 BufferedImage exitblueimg, BufferedImage exitclosedimg) throws IOException {
+        /*
+        Array lists of locks and switches are created to keep track of those who have yet to find a pair when reading
+        the map file.
+         */
         ArrayList<Lock> locks = new ArrayList<>();
         ArrayList<Switch> switches = new ArrayList<>();
         String line;
@@ -225,6 +298,7 @@ public class Main extends JPanel  {
                             blocks.add(new Exit(blockXPostion, blockYPosition, exitredimg, exitblueimg, exitclosedimg, 3));
                         } else if (lineChar == '$') {
                             blocks.add(new Exit(blockXPostion, blockYPosition, exitredimg, exitblueimg, exitclosedimg, 1));
+                        // Switches and Locks are signified using lowercase characters.
                         } else if (lineChar >= 97 && lineChar <= 122) {
                             // Odd ASCII values correspond to locks. Consecutive character represents the corresponding switch.
                             if (lineChar % 2 == 1) {
@@ -267,6 +341,11 @@ public class Main extends JPanel  {
                                     switches.add(new Switch(blockXPostion, blockYPosition, switchimg, (int)lineChar - 1));
                                 }
                             }
+                        /*
+                        Players are signified using numbers. Currently, this is hardcoded into accepting 3 players.
+                        To extend to more or less players, modification to more than just the following code should be
+                        made.
+                         */
                         } else if(lineChar == '1') {
                             players.add(new Player(blockXPostion, blockYPosition, 0, 0, 270, k1img));
                         } else if(lineChar == '2') {
@@ -277,9 +356,15 @@ public class Main extends JPanel  {
                     }
                 }
             }
+            /*
+            Note how all tiles are assumed to be 50x50. All MapBlocks generated through the map[0..].txt file should be
+            50px by 50px. Complications arise otherwise. The following should be modified if tile size is increased or
+            decreased.
+             */
             SCREEN_HEIGHT *= 50;
             SCREEN_WIDTH *= 50;
         } catch (IOException ex) {
+            // Default size.
             SCREEN_HEIGHT = 500;
             SCREEN_WIDTH = 500;
             throw(ex);
@@ -292,18 +377,40 @@ public class Main extends JPanel  {
         Graphics2D g2 = (Graphics2D) g;
         buffer = world.createGraphics();
         super.paintComponent(g2);
+        /*
+        When the game ends and we have won, a unique text is printed.
+         */
+        if (gameEnd) {
+            g2.setColor(Color.BLACK);
+            Font font = new Font("Helvetica", Font.BOLD, 45);
+            g2.setFont(font);
+            g2.drawString("Game Won!", 80, 80);
+            return;
+        }
+        // The background is drawn first.
         this.background.drawImage(buffer);
+        // All blocks are drawn.
         for (Collideable block: blocks){
             block.drawImage(buffer);
         }
+        // All players are drawn.
         for (Player player: players){
             player.drawImage(buffer);
         }
         g2.drawImage(world,0,0,null);
+        g2.setColor(Color.WHITE);
+        Font font = new Font("Helvetica", Font.BOLD, 24);
+        g2.setFont(font);
+        g2.drawString("Roombas Rescued: " + exitedPlayers.size(), 25, 30);
+        if (gameLost()) {
+            g2.drawString("Game Lost!", SCREEN_WIDTH - 200, 30);
+        }
     }
 
+    /**
+     * Iterate through all Collideable objects and compare them to each other.
+     */
     private void testCollisions() {
-        // HANDLE COLLISION TESTING HERE
         Iterator iterA = blocks.iterator();
         while (iterA.hasNext()) {
             Collideable a = (Collideable)iterA.next();
@@ -338,36 +445,18 @@ public class Main extends JPanel  {
                 }
             }
         }
-        /*for(Collideable a: blocks) {
-            // Test block to block collisions
-            for(Collideable b: blocks) {
-                if(hasCollided(a, b)) {
-                    System.out.println("Two blocks have collided.");
-                    a.handleCollisions(b);
-                    b.handleCollisions(a);
-                }
-            }
-            // Test player block collisions.
-            for(Collideable p: players) {
-                if(hasCollided(a, p)) {
-                    a.handleCollisions(p);
-                    p.handleCollisions(a);
-                }
-            }
-        }
-        for(Collideable a: players) {
-            for(Collideable b: players) {
-                if(hasCollided(a, b)) {
-                    a.handleCollisions(b);
-                    b.handleCollisions(a);
-                }
-            }
-        }*/
-
     }
 
+    /**
+     *
+     * @param a a Collideable object
+     * @param b another Collideable object
+     * @return true if the two objects have collided. (Their coordinates intersect).
+     *
+     * Collisions are calculated under the assumption that all objects are rectangular. Collisions work for different
+     * sized objects and are calculated based on the size of their corresponding images.
+     */
     private boolean hasCollided(Collideable a, Collideable b) {
-
         if (a != b && !((a instanceof Wall) && (b instanceof Wall))) {
             /*if (a.getX() + a.getImg().getWidth() > b.getX()){
                 //System.out.println("has not collided");
@@ -402,6 +491,9 @@ public class Main extends JPanel  {
         return false;
     }
 
+    /**
+     * Updates the blocks. Handles the destruction of blocks from the ArrayList.
+     */
     private void updateBlocks() {
         Iterator<MapBlock> iterator = blocks.iterator();
         while(iterator.hasNext()){
@@ -413,6 +505,11 @@ public class Main extends JPanel  {
             }
         }
     }
+
+    /**
+     * Updates the players. Handles the destruction of players from the ArrayList.
+     * Handles player exiting.
+     */
     private void updatePlayers() {
         Iterator<Player> iterator = players.iterator();
         while(iterator.hasNext()){

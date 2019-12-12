@@ -2,6 +2,11 @@ package Game;
 
 import java.awt.image.BufferedImage;
 
+/**
+ * @author bera h. coskun
+ *
+ * A boulder can be pushed around by all objects. If it collides with a hostile object, it will destroy it.
+ */
 public class Boulder extends MapBlock {
 
     int vx;
@@ -11,8 +16,16 @@ public class Boulder extends MapBlock {
     }
 
     public void update() {
+        // Nothing needs to be updated.
     }
 
+    /**
+     *
+     * @param toCompare is the object that has been collided with. The information about this object can be useful for
+     *                  handling collisions.
+     *
+     * Collisions are handled in a way similar to pushBack() with some slight modifications.
+     */
     public boolean handleCollisions(Collideable toCompare) {
         double calculatedAngle;
         try {

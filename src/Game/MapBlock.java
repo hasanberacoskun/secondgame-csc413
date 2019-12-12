@@ -2,6 +2,11 @@ package Game;
 
 import java.awt.image.BufferedImage;
 
+/**
+ * @author bera h. coskun
+ *
+ * A MapBlock is any object that is created according to instructions provided in the map[0..].txt files.
+ */
 public abstract class MapBlock extends Collideable{
     private BufferedImage img;
 
