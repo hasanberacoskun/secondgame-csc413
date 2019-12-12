@@ -17,6 +17,8 @@ public class Player extends MapBlock implements Destroyable{
     private int angle;
     private int defaultX;
     private int defaultY;
+    private int formerx;
+    private int formery;
 
     private boolean toBeDestroyed = false;
     private boolean exited;
@@ -42,6 +44,8 @@ public class Player extends MapBlock implements Destroyable{
         this.vy = vy;
         this.health = 1;
         this.exited = false;
+        this.formerx = x;
+        this.formery = y;
     }
 
 
@@ -77,7 +81,8 @@ public class Player extends MapBlock implements Destroyable{
      * @return true when completed.
      *
      * If collision with the following:
-     * -Wall or Boulder -> Push back
+     * -Wall -> Push back
+     * -Boulder -> (the boulder handles this)
      * -Player -> Push back
      * -TNT -> Set toBeDestroyed
      * -Lock -> Push back if locked.
@@ -88,11 +93,15 @@ public class Player extends MapBlock implements Destroyable{
     @Override
     public boolean handleCollisions(Collideable toCompare){
         // modify this later to be Wall instead of MapBlock
-        if ((toCompare instanceof Wall || toCompare instanceof Boulder)){
-            pushBack(toCompare);
+        if ((toCompare instanceof Wall)){
+            this.setX(formerx);
+            this.setY(formery);
+            //pushBack(toCompare);
             checkBorder();
         } else if (toCompare instanceof Player){
-            pushBack(toCompare);
+            this.setX(formerx);
+            this.setY(formery);
+            //pushBack(toCompare);
             checkBorder();
         } else if ((toCompare instanceof TNT) || (toCompare instanceof Blade)) {
             System.out.println("Player collided with blade.");
@@ -101,7 +110,9 @@ public class Player extends MapBlock implements Destroyable{
             System.out.println("Locked status: " + ((Lock) toCompare).getLockedStatus());
             if (((Lock) toCompare).getLockedStatus()) {
                 System.out.println("You shall not pass!");
-                pushBack(toCompare);
+                //pushBack(toCompare);
+                this.setX(formerx);
+                this.setY(formery);
                 checkBorder();
             } else {
                 System.out.println("You may pass.");
@@ -116,6 +127,8 @@ public class Player extends MapBlock implements Destroyable{
      * The player's position is updated.
      */
     public void update() {
+        formerx = this.getX();
+        formery = this.getY();
         if (health <= 0) {
             health = 5;
             super.setX(defaultX);
