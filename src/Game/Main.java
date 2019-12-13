@@ -457,7 +457,7 @@ public class Main extends JPanel  {
      * sized objects and are calculated based on the size of their corresponding images.
      */
     private boolean hasCollided(Collideable a, Collideable b) {
-        int padding = 1;
+        int padding = 5;
         if (a != b && !((a instanceof Wall) && (b instanceof Wall))) {
             if ((a.getX() - padding + a.getImg().getWidth() >= b.getX()) && (a.getX() - padding + a.getImg().getWidth() <= b.getX() + b.getImg().getWidth())) {
                 if ((a.getY() - padding + a.getImg().getHeight() >= b.getY()) && (a.getY() - padding + a.getImg().getHeight() <= b.getY() + b.getImg().getHeight())) {

@@ -1,16 +1,5 @@
-WWWWWWWWWWWWWWWWWWWWWWWWW
-W f W                  $W
-W   WH                  W
-W 1 W                   W
-W   W                   W
-W   W                   W
-W   W             3     W
-W   a                   W
-W   W          T        W
-W   W                   W
-W   W     B             W
-WWWWW                   W
-W#  V          WWWWWWWWWW
-W        b     e        W
-W              W  2     W
-WWWWWWWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWWWWWWWWW
+W1  2     3    # W
+W                W
+W                W
+WWWWWWWWWWWWWWWWWW
